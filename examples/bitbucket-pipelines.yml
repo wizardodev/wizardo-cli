@@ -1,0 +1,37 @@
+# bitbucket-pipelines.yml
+#
+# Deploy to Wizardo from Bitbucket Pipelines.
+# Add WIZARDO_TOKEN in Repository Settings → Repository variables.
+
+image: node:20-alpine
+
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Build
+          caches: [node]
+          script:
+            - npm ci
+            - npm run build
+          artifacts:
+            - dist/**
+
+      - step:
+          name: Deploy to staging
+          deployment: staging
+          script:
+            - npx -y @wizardo/cli@latest deploy ./dist
+                --remote "@myorg/dashboard"
+                --env staging
+          after-script:
+            - echo "deployed to staging"
+
+      - step:
+          name: Deploy to production
+          deployment: production
+          trigger: manual
+          script:
+            - npx -y @wizardo/cli@latest deploy ./dist
+                --remote "@myorg/dashboard"
+                --env production

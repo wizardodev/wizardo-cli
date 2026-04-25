@@ -1,0 +1,59 @@
+# .github/workflows/deploy-wizardo.yml
+#
+# Deploy to Wizardo on every push to main.
+# Requires: WIZARDO_TOKEN secret set in repo Settings → Secrets.
+#
+# Each stage maps to a Wizardo environment. Adjust `--env` and
+# trigger rules to match your branching strategy.
+
+name: Deploy to Wizardo
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  deploy-preview:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    environment: preview
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+      - run: npx -y @wizardo/cli@latest deploy ./dist
+            --remote "@myorg/dashboard"
+            --env dev
+        env:
+          WIZARDO_TOKEN: ${{ secrets.WIZARDO_TOKEN }}
+
+  deploy-production:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+      - run: npx -y @wizardo/cli@latest deploy ./dist
+            --remote "@myorg/dashboard"
+            --env production
+        env:
+          WIZARDO_TOKEN: ${{ secrets.WIZARDO_TOKEN }}

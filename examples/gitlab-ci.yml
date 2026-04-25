@@ -1,0 +1,61 @@
+# .gitlab-ci.yml
+#
+# Deploy to Wizardo from GitLab CI.
+# Set WIZARDO_TOKEN as a masked CI/CD variable (Settings → CI/CD →
+# Variables). Mark it as "Masked" and "Protected" for production.
+#
+# Build artifacts are passed between stages. Each stage targets a
+# different Wizardo environment.
+
+image: node:20-alpine
+
+stages:
+  - build
+  - deploy-dev
+  - deploy-staging
+  - deploy-production
+
+build:
+  stage: build
+  script:
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 hour
+
+deploy:dev:
+  stage: deploy-dev
+  script:
+    - npx -y @wizardo/cli@latest deploy ./dist
+        --remote "@myorg/dashboard"
+        --env dev
+  variables:
+    WIZARDO_TOKEN: $WIZARDO_TOKEN
+  # Deploy on every branch push.
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+deploy:staging:
+  stage: deploy-staging
+  script:
+    - npx -y @wizardo/cli@latest deploy ./dist
+        --remote "@myorg/dashboard"
+        --env staging
+  variables:
+    WIZARDO_TOKEN: $WIZARDO_TOKEN
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+
+deploy:production:
+  stage: deploy-production
+  script:
+    - npx -y @wizardo/cli@latest deploy ./dist
+        --remote "@myorg/dashboard"
+        --env production
+  variables:
+    WIZARDO_TOKEN: $WIZARDO_TOKEN_PROD
+  when: manual
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"

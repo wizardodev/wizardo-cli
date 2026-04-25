@@ -1,0 +1,34 @@
+{
+  "name": "@wizardo/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Official CLI for Wizardo — deploy microfrontends from any CI/CD pipeline",
+  "license": "MIT",
+  "bin": {
+    "wizardo": "./dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@wizardo/sdk": "file:../wizardo-sdk-js",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["wizardo", "microfrontend", "deploy", "cli"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wizardodev/wizardo-cli"
+  }
+}
